@@ -1,0 +1,200 @@
+---
+title: "Class 14: RNASeq Mini-Project"
+author: "Mariam Benny (A17103451)"
+format: pdf
+---
+
+Today we will complete a RNASeq analysis from counts to pathways.
+
+We will work with data on differential analysis of lung fibroblasts in response to loss of developmental transcription factor HOXA1.
+
+## Data Import 
+```{r}
+library(DESeq2)
+metaFile <- "GSE37704_metadata.csv"
+countFile <- "GSE37704_featurecounts.csv"
+
+metadata = read.csv(metaFile, row.names=1)
+head(metadata)
+```
+
+```{r}
+metadata <- read.csv("GSE37704_metadata.csv")
+metadata$id 
+```
+
+```{r}
+countData = read.csv(countFile, row.names=1)
+head(countData)
+```
+
+```{r}
+colnames(counts)
+```
+
+We need to remove the first "length column from our `counts`. 
+
+```{r}
+# Note we need to remove the odd first $length col
+countData <- countData[,-1]
+colnames(countData) == metadata$id
+```
+
+```{r}
+to.keep <- rowSums(countData) != 0 
+countData <- countData[to.keep,]
+```
+
+> Q. How many genes do we have left? 
+
+```{r}
+nrow(countData)
+```
+
+## DESeq Import 
+
+```{r}
+library(DESeq2)
+```
+
+## DESeq setup 
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = countData,
+                              colData = metadata,
+                              design = ~condition)
+```
+
+## DESeq analysis 
+
+```{r}
+dds <- DESeq(dds)
+res <- results(dds)
+```
+
+```{r}
+head(res)
+```
+
+## Result visualization 
+
+```{r}
+mycols <- rep("gray", nrow(res))
+
+mycols[ abs(res$log2FoldChange) > 2 ] <- "red"
+
+inds <- (res$padj < 0.01) & (abs(res$log2FoldChange) > 2)
+mycols[ inds ] <- "blue"
+
+
+plot(res$log2FoldChange, -log10(res$padj), col=mycols, 
+     xlab="Log2(FoldChange)", ylab="-Log10(P-value)")
+```
+
+## Add Annotation
+
+```{r}
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+
+columns(org.Hs.eg.db)
+```
+
+
+```{r}
+res$symbol <- mapIds(org.Hs.eg.db,
+                     keys=rownames(res),
+                     keytype = "ENSEMBL",
+                     column = "SYMBOL")
+```
+
+```{r}
+res$entrez = mapIds(org.Hs.eg.db,
+                    keys=rownames(res),
+                    keytype="ENSEMBL",
+                    column="ENTREZID",
+                    multiVals="first")
+
+```
+
+```{r}
+res$name =   mapIds(org.Hs.eg.db,
+                    keys=row.names(res),
+                    keytype="ENSEMBL",
+                    column="GENENAME",
+                    multiVals="first")
+```
+
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+
+head(kegg.sets.hs, 1)
+```
+
+```{r}
+foldchanges = res$log2FoldChange
+names(foldchanges) = res$entrez
+head(foldchanges)
+```
+
+```{r}
+keggres = gage(foldchanges, gsets=kegg.sets.hs)
+```
+
+```{r}
+nrow(countData)
+nrow(res)
+```
+
+```{r}
+head(keggres$less, 4)
+```
+
+Generate pathway figures
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa04110")
+```
+
+![](hsa04110.pathview.png)
+
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa04110", kegg.native=FALSE)
+
+keggrespathways <- rownames(keggres$greater)[1:5]
+
+
+keggresids = substr(keggrespathways, start=1, stop=8)
+keggresids
+
+pathview(gene.data=foldchanges, pathway.id=keggresids, species="hsa")
+```
+
+
+## Pathway Images
+
+### Pathway: hsa04640
+![](hsa04640.pathview.png)
+
+
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+print(paste("Total number of significant genes:", length(sig_genes)))
+```
+
+```{r}
+to.rm <- rowSums(countData) == 0
+```
+
+![](R-HSA-68886.png)
+
+
+##Save Results
+```{r}
+write.csv(res, file="myresults.csv")
+```
+
