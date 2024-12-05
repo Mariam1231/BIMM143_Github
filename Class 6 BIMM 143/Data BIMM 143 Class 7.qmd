@@ -1,0 +1,6 @@
+---
+title: "BIMM 143 Class 7 data"
+author: "Mariam Benny (A17103451)"
+format: html
+---
+
