@@ -15,5 +15,4 @@ Classwork for [BIMM143](https://bioboot.github.io/bimm143_F24) UC San Diego
 - Class 15: [Investigating pertussis resurgence mini project](https://github.com/Mariam1231/BIMM143_Github/blob/main/Class%2015%20File/Class-15-Doc.pdf)
 - Class 16: [Essential UNIX for bioinformatics]()
 
->>>>>>> d95c353c1cf80e91a66682cc5549ae557b1a6d6e
 

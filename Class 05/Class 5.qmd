@@ -1,0 +1,321 @@
+---
+title: "Class 5: Data Viz with ggplot"
+author: "Mariam Benny (PID: 17103451)"
+format: gfm
+---
+
+Questions:
+
+>Q1. For which phases is data visualization important in our scientific workflows? 
+
+All of the above
+
+>Q2. True or False? The ggplot2 package comes already installed with R? 
+
+False
+
+>Q3. Which plot types are typically NOT used to compare distributions of numeric variables? 
+
+Network graphs
+
+>Q4. Which statement about data visualization with ggplot2 is incorrect? 
+
+ggplot is the only way to create plots in R
+
+>Q5. Which geometric layer should be used to create scatter plots in ggplot2? 
+
+geom_point()
+
+>Q6. In your own RStudio can you add a trend line layer to help show the relationship between the plot variables with the geom_smooth() function?
+
+Yes I can, geom_smooth(method="lm") creates a trend line
+
+>Q7. Argue with geom_smooth() to add a straight line from a linear model without the shaded standard error region?
+
+Yes you can, you write geom_smooth(method="lm", se = FALSE) to remove the shaded area.
+
+>Q8. Use the nrow() function to find out how many genes are in this dataset. What is your answer? 
+
+5196 genes are in the data. I used nrow(genes).
+
+>Q9. Use the colnames() function and the ncol() function on the genes data frame to find out what the column names are (we will need these later) and how many columns there are. How many columns did you find?
+
+I found 4 columns using ncol(genes).
+
+>Q10. Use the table() function on the State column of this data.frame to find out how many ‘up’ regulated genes there are. What is your answer? 
+
+There are 127 'up' regulated genes. I used table(genes$State).
+
+>Q11. Using your values above and 2 significant figures. What fraction of total genes is up-regulated in this dataset? 
+
+I got 2.44% or 2.4% rounded to two sig figs as the fraction of genes in the dataset that is up-regulated. I used the code round(table(genes$State)/nrow(genes) * 100, 2).
+
+>Q12. Complete the code below to produce a first basic scater plot of this gapminder_2007 dataset:
+
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point()
+  
+>Q13. Can you adapt the code you have learned thus far to reproduce our gapminder scatter plot for the year 1957? What do you notice about this plot is it easy to compare with the one for 2007?
+
+Yes I was able to adapt the code.There are continents on the plot for 1957, and I think it is a little hard to compare it with the one for 2007.
+
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this 
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+Key-point: for simple plots, ggplot is more verbose but as plots get more complicated ggplot starts to be more clear and simple than base R plot()
+
+Once a package is installed I can load it up with the 'library()' function.
+
+```{r}
+plot(cars)
+```
+
+```{r}
+head(cars)
+```
+
+```{r}
+#install.packages("ggplot2")
+library(ggplot2)
+ggplot(cars) +
+  aes(speed, dist) +
+  geom_point() +
+  geom_smooth(method ="lm", se = FALSE) +
+  labs(title="Stopping distance of old cars", subtitle="From the in-built cars dataset")
+theme_bw()
+```
+
+
+```{r}
+url <- "https://bioboot.github.io/bimm143_S20/class-material/up_down_expression.txt"
+genes <- read.delim(url)
+```
+
+```{r}
+nrow(genes)
+```
+
+```{r}
+colnames(genes)
+ncol(genes)
+```
+
+```{r}
+table(genes$State)
+```
+
+
+```{r}
+round( table(genes$State)/nrow(genes) * 100, 2 )
+```
+
+A first plot:
+```{r}
+ggplot(genes) +
+  aes(Condition1, Condition2) +
+  geom_point(col="blue")
+```
+
+```{r}
+p <- ggplot(genes) + 
+    aes(x=Condition1, y=Condition2, col=State) +
+    geom_point()
+p
+```
+
+```{r}
+p + scale_colour_manual( values=c("blue","gray","red") ) +
+labs(title="Gene Expresion Changes Upon Drug Treatment",
+         x="Control (no drug) ",
+         y="Drug Treatment")
+```
+
+```{r}
+library(gapminder)
+```
+
+
+```{r}
+length(gapminder$year)
+```
+
+
+```{r}
+gapminder$year
+```
+
+```{r}
+table(gapminder$year)
+```
+
+```{r}
+length(unique(gapminder$year))
+```
+
+```{r}
+library(dplyr)
+gapminder_2007 <- gapminder %>% filter(year==2007)
+# File location online
+url <- "https://raw.githubusercontent.com/jennybc/gapminder/master/inst/extdata/gapminder.tsv"
+
+gapminder <- read.delim(url)
+```
+
+```{r}
+filter(gapminder, country=="Unites States")
+```
+```{r}
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point(alpha=0.5)
+```
+
+```{r}
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp, color=continent, size=pop) +
+  geom_point(alpha=0.5)
+```
+
+```{r}
+ggplot(gapminder_2007) + 
+  aes(x = gdpPercap, y = lifeExp, color = pop) +
+  geom_point(alpha=0.8)
+```
+
+```{r}
+ggplot(gapminder_2007) + 
+  aes(x = gdpPercap, y = lifeExp, size = pop) +
+  geom_point(alpha=0.5)
+```
+```{r}
+ggplot(gapminder_2007) + 
+  geom_point(aes(x = gdpPercap, y = lifeExp,
+                 size = pop), alpha=0.5) + 
+  scale_size_area(max_size = 10)
+```
+
+```{r}
+gapminder_1957 <- gapminder %>% filter(year==1957)
+
+ggplot(gapminder_1957) + 
+  aes(x = gdpPercap, y = lifeExp, color=continent,
+                 size = pop) +
+  geom_point(alpha=0.7) + 
+  scale_size_area(max_size = 10) 
+```
+
+```{r}
+gapminder_1957 <- gapminder %>% filter(year==1957 | year==2007)
+
+ggplot(gapminder_1957) + 
+  geom_point(aes(x = gdpPercap, y = lifeExp, color=continent,
+                 size = pop), alpha=0.7) + 
+  scale_size_area(max_size = 10) +
+  facet_wrap(~year)
+```
+
+```{r}
+gapminder_top5 <- gapminder %>% 
+  filter(year==2007) %>% 
+  arrange(desc(pop)) %>% 
+  top_n(5, pop)
+
+gapminder_top5
+```
+
+```{r}
+ggplot(gapminder_top5) + 
+  geom_col(aes(x = country, y = pop))
+```
+
+```{r}
+ggplot(gapminder_top5) + 
+  geom_col(aes(x = country, y = lifeExp))
+```
+
+```{r}
+ggplot(gapminder_top5) + 
+  geom_col(aes(x = country, y = pop, fill = continent))
+```
+```{r}
+ggplot(gapminder_top5) + 
+  geom_col(aes(x = country, y = pop, fill = lifeExp))
+```
+```{r}
+ggplot(gapminder_top5) +
+  aes(x=country, y=pop, fill=gdpPercap) +
+  geom_col()
+```
+```{r}
+ggplot(gapminder_top5) +
+  aes(x=reorder(country, -pop), y=pop, fill=gdpPercap) +
+  geom_col()
+```
+
+```{r}
+ggplot(gapminder_top5) +
+  aes(x=reorder(country, -pop), y=pop, fill=country) +
+  geom_col(col="gray30") +
+  guides(fill="none")
+```
+```{r}
+head(USArrests)
+```
+```{r}
+USArrests$State <- rownames(USArrests)
+ggplot(USArrests) +
+  aes(x=reorder(State,Murder), y=Murder) +
+  geom_col() +
+  coord_flip()
+```
+```{r}
+ggplot(USArrests) +
+  aes(x=reorder(State,Murder), y=Murder) +
+  geom_point() +
+  geom_segment(aes(x=State, 
+                   xend=State, 
+                   y=0, 
+                   yend=Murder), color="blue") +
+  coord_flip()
+```
+
+library(gapminder)
+library(gganimate)
+
+# Setup nice regular ggplot of the gapminder data
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  # Facet by continent
+  facet_wrap(~continent) +
+  # Here comes the gganimate specific bits
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  shadow_wake(wake_length = 0.1, alpha = FALSE)
+
+
+
+
+
