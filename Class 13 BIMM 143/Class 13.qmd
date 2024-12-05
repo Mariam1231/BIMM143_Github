@@ -1,0 +1,337 @@
+---
+title: "Class 13: Transcriptomics and the analysis of RNA-Seq data"
+author: "Mariam Benny (A17103451)"
+format: gfm
+---
+
+```{r}
+counts <- read.csv("airway_scaledcounts.csv", row.names=1)
+metadata <-  read.csv("airway_metadata.csv")
+```
+
+
+```{r}
+head(counts)
+```
+
+> Q1.How many genes are in this dataset? 
+
+```{r}
+nrow(counts)
+```
+
+> Q2.How many ‘control’ cell lines do we have? 
+ 
+4 
+
+```{r}
+head(metadata)
+```
+```{r}
+sum(metadata$dex == "control")
+```
+```{r}
+table(metadata$dex)
+```
+
+## Toy differential expression analysis 
+
+calculate the mean per gene count values for all "control" samples (i.e columns in `counts`) and do the same for "treated" and then compare them. 
+
+> Q3. How would you make the above code in either approach more robust? Is there a function that could help here?
+
+1. Find all "control" valuesc/columns in `counts` 
+
+```{r}
+control.inds <- metadata$dex == "control"
+control.counts <- counts[,control.inds]
+```
+
+2. Find the mean per gene across all control columns. 
+```{r}
+control.mean <- apply(control.counts, 1, mean)
+```
+
+> Q4. Follow the same procedure for the treated samples (i.e. calculate the mean per gene across drug treated samples and assign to a labeled vector called treated.mean)
+
+3. Do the same steps to find the `treated.mean` values 
+
+```{r}
+treated.inds <- metadata$dex == "treated"
+treated.counts <- counts[,treated.inds]
+```
+
+```{r}
+treated.mean <- apply(treated.counts, 1, mean)
+```
+
+> Q5 (a). Create a scatter plot showing the mean of the treated samples against the mean of the control samples. Your plot should look something like the following.
+
+```{r}
+meancounts <- data.frame(control.mean, treated.mean)
+```
+
+```{r}
+plot(meancounts[,1], meancounts[,2], xlab="control", ylab="treated")
+```
+```{r}
+treated.mean <- apply(counts[, metadata$dex =="treated"], 2, mean)
+```
+
+> Q5 (b).You could also use the ggplot2 package to make this figure producing the plot below. What geom_?() function would you use for this plot? 
+
+geom_point 
+
+```{r}
+library(ggplot2)
+ggplot(meancounts) + aes(x=control.mean, y=treated.mean) + geom_point()
+```
+
+> Q6. Try plotting both axes on a log scale. What is the argument to plot() that allows you to do this?
+
+log2
+
+```{r}
+plot(meancounts)
+```
+
+```{r}
+plot(meancounts, log="xy")
+```
+
+We frequently use log2 transformations for this type of data. 
+```{r}
+log2(10/10)
+
+log2(20/10)
+
+log2(10/20)
+```
+
+These log2 values make interpretation of "fold-change" a little easier and a rule-of-thumb in the file is a log2 fold-change of +2 or -2 is where we start to pay attention. 
+
+```{r}
+log2(40/10)
+```
+
+Let's calculate the log2(fold-change) and add it to our `meancounts` data.frame.
+
+```{r}
+meancounts$log2fc <- log2(meancounts$treated.mean/meancounts$control.mean)
+head(meancounts)
+```
+
+```{r}
+to.rm <- rowSums(meancounts[,1:2]==0) > 0
+mycounts <- meancounts[!to.rm,]
+```
+
+> Q. How many genes do I have left after this zero count filtering?
+
+```{r}
+nrow(mycounts)
+```
+
+> Q. How many genes are "up" regulated upon drug treatment at a threshhold of +2 log2-fold-change?
+
+First step: I need to extract the log2fc values
+Second step: I need to find those that are above +2
+Third step: Count them
+
+```{r}
+sum(mycounts$log2fc > 2)
+```
+
+
+> Q. How many genes are "down" regulated upon drug treatment at a threshold of -2 log2-fold-change?
+
+```{r}
+sum(mycounts$log2fc < -2)
+```
+
+Wow hold on we are missing the stats here. Is the differnce in the mean counts significant?
+
+Let's do this analysis the right way with stats and use the **DESeq2** 
+
+```{r}
+library(BiocManager)
+library(DESeq2)
+```
+
+The first function that we will use will setup the data in a way (format) DESeq wants it
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData=counts, 
+                              colData=metadata, 
+                              design=~dex)
+dds
+```
+
+
+The function in the package is called `DESeq()` and we can run it on our `dds` object
+
+I will get results from dds with the `results()` function:
+
+```{r}
+dds <- DESeq(dds)
+```
+
+```{r}
+res <- results(dds)
+res
+```
+
+Make a common overall results figure from this analysis. This is designed to keep our inner biologist and stats nerd happy - it plots fold-change vs P-value
+
+
+```{r}
+plot( res$log2FoldChange,  -log(res$padj), 
+      xlab="Log2(FoldChange)",
+      ylab="-Log(P-value)")
+```
+
+
+```{r}
+plot(res$log2FoldChange, -log(res$padj))
+abline(v=c(-2,2), col="gray")
+abline(h=-log(0.005), col="gray")
+```
+
+```{r}
+log(0.0005)
+```
+
+Add some color to this plot:
+```{r}
+# Setup our custom point color vector 
+mycols <- rep("gray", nrow(res))
+mycols[ abs(res$log2FoldChange) > 2 ]  <- "red" 
+
+inds <- (res$padj < 0.01) & (abs(res$log2FoldChange) > 2 )
+
+# Volcano plot with custom colors 
+plot( res$log2FoldChange,  -log(res$padj), 
+ col=mycols, ylab="-Log(P-value)", xlab="Log2(FoldChange)" )
+
+# Cut-off lines
+abline(v=c(-2,2), col="gray", lty=2)
+abline(h=-log(0.1), col="gray", lty=2)
+```
+
+I want to save my results to date out to disc
+```{r}
+write.csv(res, file="myresults.csv") 
+```
+
+We will pick this up next time and add **annotation** (ie. what are these genes of interest) and do **pathway analysis** (what biology) are they known to be involved with.
+
+I will need to translate our gene identifiers "ENSG0000..." into gene names that the rest of the world can understand.
+
+To this "annotation", I will use the ***AnnotationDbi*** package.
+
+```{r}
+library(AnnotationDbi)
+```
+
+```{r}
+library(org.Hs.eg.db)
+
+columns(org.Hs.eg.db)
+```
+
+
+I will use the `mapIds()`function to "map" my identifiers to those form different databases. I will go between "ENSEMBL" and "SYMBOL" (and then after "GENENAME").
+
+```{r}
+res$symbol <- mapIds(org.Hs.eg.db,
+                     keys=rownames(res), 
+                     keytype="ENSEMBL",
+                     column="SYMBOL")
+
+#head(res)
+```
+
+And "GENENAME"
+```{r}
+res$genename <- mapIds(org.Hs.eg.db,
+                       keys=row.names(res),
+                       keytype="ENSEMBL",
+                       column="GENENAME")
+```
+
+And "ENTREZID"
+```{r}
+res$entrez <- mapIds(org.Hs.eg.db,
+                    keys=rownames(res),
+                    keytype="ENSEMBL",
+                    column="ENTREZID")
+```
+
+
+
+```{r}
+#rownames(res)
+```
+
+Save our annotated results object
+
+```{r}
+write.csv(res, file="results_annotated.csv")
+```
+
+##Pathway Analysis
+
+Now that we have our results with added annotation we can do some pathway mapping
+
+Let's use the **gage** package to look for KEGG pathways in our results (genes of interest). I will also use the **pathview** package to draw little pathway figures.
+
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+
+data(kegg.sets.hs)
+
+head(kegg.sets.hs, 1)
+```
+
+What **gage** wants as input is not my big table/data.frame of results. It just wants a "vector of importance". For RNASeq data like we have thus is out log2FC values...
+
+```{r}
+foldchanges = res$log2FoldChange
+names(foldchanges) = res$entrez
+head(foldchanges)
+
+```
+
+Now let's run the gage pathway analysis
+```{r}
+#Get the results
+keggres = gage(foldchanges, gsets=kegg.sets.hs)
+```
+
+What s in this `keggres` object?
+```{r}
+attributes(keggres)
+```
+
+```{r}
+head(keggres$less, 3)
+```
+
+Let's use the pathview packaage to look at one of these highlighted KEGG pathways with our genes highlighted. "hsa05310 Asthma"
+
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa05310")
+```
+
+![Asthma pathway with my DEGs](hsa05310.pathview.png)
+
+
+
+
+
+
+
+
+
