@@ -1,6 +1,7 @@
 # BIMM143_Github
 Classwork for [BIMM143](https://bioboot.github.io/bimm143_F24) UC San Diego
 
+<<<<<<< HEAD
 - Class 4: [Bioinformatics data analysis with R]()
 - Class 5: [Data exploration and visualization in R]()
 - Class 6: [Why, when and how of writing your own R functions]()
