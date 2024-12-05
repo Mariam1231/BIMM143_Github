@@ -7,7 +7,7 @@ Classwork for [BIMM143](https://bioboot.github.io/bimm143_F24) UC San Diego
 - Class 7: [Introduction to machine learning for Bioinformatics 1]()
 - Class 8: [Unsupervised learning mini-project]()
 - Class 9: [Structural Bioinformatics (pt1)]()
-- Class 10 (Halloween): [PDF](https://github.com/Mariam1231/BIMM143_Github/blob/main/Class%20Halloween/Halloween.pdf)
+- Class 10 (Halloween): [Candy Mini-Project](https://github.com/Mariam1231/BIMM143_Github/blob/main/Class%20Halloween/Halloween.pdf)
 - Class 11: [Structural Bioinformatics (pt2 AlphaFold)]()
 - Class 12: [Genome informatics and high throughput sequencing]()
 - Class 13: [Transcriptomics, RNA-Seq analysis, and the interpretation of gene lists]()
